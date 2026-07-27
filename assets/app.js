@@ -1,120 +1,18 @@
-(() => {
-  const dialogs = {
-    chooser: document.getElementById("chooserDialog"),
-    buyer: document.getElementById("buyerDialog"),
-    seller: document.getElementById("sellerDialog"),
-  };
-
-  const setBodyDialogState = () => {
-    const anyOpen = Object.values(dialogs).some((dialog) => dialog && dialog.open);
-    document.body.classList.toggle("dialog-open", anyOpen);
-  };
-
-  const openDialog = (name) => {
-    const dialog = dialogs[name];
-    if (!dialog) return;
-
-    Object.values(dialogs).forEach((item) => {
-      if (item && item.open) item.close();
-    });
-
-    dialog.showModal();
-    setBodyDialogState();
-
-    const firstInput = dialog.querySelector("input, select, button:not(.dialog-close)");
-    window.setTimeout(() => firstInput?.focus(), 50);
-  };
-
-  document.querySelectorAll("[data-open-form]").forEach((button) => {
-    button.addEventListener("click", () => openDialog(button.dataset.openForm));
-  });
-
-  document.querySelectorAll("[data-switch-form]").forEach((button) => {
-    button.addEventListener("click", () => openDialog(button.dataset.switchForm));
-  });
-
-  document.querySelectorAll("[data-close-dialog]").forEach((button) => {
-    button.addEventListener("click", () => {
-      button.closest("dialog")?.close();
-      setBodyDialogState();
-    });
-  });
-
-  Object.values(dialogs).forEach((dialog) => {
-    if (!dialog) return;
-
-    dialog.addEventListener("click", (event) => {
-      const box = dialog.getBoundingClientRect();
-      const clickedOutside =
-        event.clientX < box.left ||
-        event.clientX > box.right ||
-        event.clientY < box.top ||
-        event.clientY > box.bottom;
-
-      if (clickedOutside) dialog.close();
-    });
-
-    dialog.addEventListener("close", setBodyDialogState);
-  });
-
-  document.querySelectorAll(".multi-step-form").forEach((form) => {
-    const steps = Array.from(form.querySelectorAll(".form-step"));
-    const nextButton = form.querySelector("[data-next]");
-    const prevButton = form.querySelector("[data-prev]");
-    const submitButton = form.querySelector(".submit-button");
-    const formType = form.dataset.formType;
-    const progress = document.querySelector(`[data-progress="${formType}"]`);
-    const stepLabel = document.querySelector(`[data-step-label="${formType}"]`);
-
-    let currentStep = 0;
-
-    const showStep = (index) => {
-      currentStep = Math.max(0, Math.min(index, steps.length - 1));
-
-      steps.forEach((step, stepIndex) => {
-        step.classList.toggle("active", stepIndex === currentStep);
-      });
-
-      prevButton.style.display = currentStep === 0 ? "none" : "inline-flex";
-      nextButton.style.display = currentStep === steps.length - 1 ? "none" : "inline-flex";
-      submitButton.style.display =
-        currentStep === steps.length - 1 ? "inline-flex" : "none";
-
-      if (progress) {
-        progress.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
-      }
-
-      if (stepLabel) {
-        stepLabel.textContent = `Paso ${currentStep + 1} de ${steps.length}`;
-      }
-
-      steps[currentStep].querySelector("input, select")?.focus({ preventScroll: true });
-    };
-
-    const validateCurrentStep = () => {
-      const fields = Array.from(
-        steps[currentStep].querySelectorAll("input, select, textarea")
-      ).filter((field) => !field.disabled);
-
-      for (const field of fields) {
-        if (!field.checkValidity()) {
-          field.reportValidity();
-          return false;
-        }
-      }
-
-      return true;
-    };
-
-    nextButton.addEventListener("click", () => {
-      if (validateCurrentStep()) showStep(currentStep + 1);
-    });
-
-    prevButton.addEventListener("click", () => showStep(currentStep - 1));
-
-    showStep(0);
-  });
-
-  const currentYear = document.getElementById("currentYear");
-  if (currentYear) currentYear.textContent = new Date().getFullYear();
-})();
+const header=document.querySelector('.site-header');
+const updateHeader=()=>header?.classList.toggle('scrolled',window.scrollY>20);
+window.addEventListener('scroll',updateHeader);updateHeader();
+document.getElementById('currentYear').textContent=new Date().getFullYear();
+const dialogs={chooser:document.getElementById('chooserDialog'),buyer:document.getElementById('buyerDialog'),seller:document.getElementById('sellerDialog')};
+function openDialog(name){Object.values(dialogs).forEach(d=>d?.open&&d.close());dialogs[name]?.showModal();document.body.classList.add('dialog-open')}
+function closeDialogs(){Object.values(dialogs).forEach(d=>d?.open&&d.close());document.body.classList.remove('dialog-open')}
+document.querySelectorAll('[data-open-form]').forEach(b=>b.addEventListener('click',()=>openDialog(b.dataset.openForm)));
+document.querySelectorAll('[data-switch-form]').forEach(b=>b.addEventListener('click',()=>openDialog(b.dataset.switchForm)));
+document.querySelectorAll('[data-close-dialog]').forEach(b=>b.addEventListener('click',closeDialogs));
+Object.values(dialogs).forEach(d=>{d?.addEventListener('click',e=>{if(e.target===d)closeDialogs()});d?.addEventListener('close',()=>document.body.classList.remove('dialog-open'))});
+document.querySelectorAll('.multi-step-form').forEach(form=>{
+  const type=form.dataset.formType; const steps=[...form.querySelectorAll('.form-step')]; let current=0;
+  const next=form.querySelector('[data-next]'),prev=form.querySelector('[data-prev]'),submit=form.querySelector('.submit-button');
+  function render(){steps.forEach((s,i)=>s.classList.toggle('active',i===current));prev.style.visibility=current===0?'hidden':'visible';next.style.display=current===steps.length-1?'none':'inline-flex';submit.style.display=current===steps.length-1?'inline-flex':'none';const pct=((current+1)/steps.length)*100;document.querySelector(`[data-progress="${type}"]`).style.width=`${pct}%`;document.querySelector(`[data-step-label="${type}"]`).textContent=`Paso ${current+1} de ${steps.length}`}
+  function validStep(){const fields=[...steps[current].querySelectorAll('input,select,textarea')];for(const f of fields){if(!f.checkValidity()){f.reportValidity();return false}}return true}
+  next.addEventListener('click',()=>{if(validStep()&&current<steps.length-1){current++;render()}});prev.addEventListener('click',()=>{if(current>0){current--;render()}});render();
+});
